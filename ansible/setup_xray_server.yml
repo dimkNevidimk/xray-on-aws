@@ -1,0 +1,82 @@
+- name: Install xray server on Ubuntu
+  hosts: all
+
+  vars_prompt:
+    - name: xray_server_cname
+      prompt: X-Ray server domain name
+      private: false
+
+  vars:
+    xray_server_nginx_listen_port: 8079
+
+  tasks:
+    - name: Write CNAME
+      copy:
+        content: "{{ xray_server_cname }}"
+        dest: ~/xray_server_cname
+
+    - name: Install dependencies
+      apt:
+        update_cache: true
+        pkg:
+          - certbot
+          - nginx
+          - moreutils
+          - jq
+          - qrencode
+        policy_rc_d: 101 # prevent nginx server restart on install
+      become: true
+
+    - name: Copy nginx config
+      template:
+        src: templates/nginx.conf.j2 
+        dest: /etc/nginx/sites-enabled/default
+      register: xray_server_nginx_conf
+      become: true
+
+    - name: Restart nginx
+      command: systemctl restart nginx
+      when: xray_server_nginx_conf.changed
+      become: true
+
+    - name: Issue certificates with certbot
+      command: 'certbot certonly --standalone --preferred-challenges http -d {{ xray_server_cname }} --register-unsafely-without-email --agree-tos --non-interactive'
+      become: true
+
+    - name: Reload Xray config when new certificates issued
+      blockinfile:
+        path: "/etc/letsencrypt/renewal/{{ xray_server_cname }}.conf"
+        block: "renew_hook = systemctl reload xray"
+        create: yes
+      become: true
+
+    - name: Download Xray installer
+      get_url:
+        url: https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh
+        dest: /tmp/install-xray-server.sh
+        checksum: sha256:6f2965646eeb5010e9518a0541958360930ab855849db875f907231ffa37d77b
+        mode: "700"
+      register: xray_server_installer
+
+    - name: Install xray server
+      when: xray_server_installer.changed
+      command: '/tmp/install-xray-server.sh install -u root'
+      become: true
+
+    - name: Default Xray config installation
+      pause:
+        prompt: "Do you want to install default XRay config? This will remove all previously set clients (No/yes)"
+      register: xray_server_reset_config
+
+    - name: Install Xray server config
+      when: xray_server_reset_config.user_input | bool
+      template:
+        src: templates/xray_server_config.json.j2
+        dest: /usr/local/etc/xray/config.json
+      become: true
+      register: xray_server_config
+
+    - name: Restart Xray server on config change
+      when: xray_server_config.changed
+      command: systemctl restart xray
+      become: true

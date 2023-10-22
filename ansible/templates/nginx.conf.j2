@@ -1,0 +1,16 @@
+server {
+    listen 127.0.0.1:{{ xray_server_nginx_listen_port }} default_server;
+    {% if 'address' in ansible_facts.default_ipv6 %}
+    listen [::1]:{{ xray_server_nginx_listen_port }} default_server;
+    {% endif %}
+
+    root /var/www/html;
+
+    index index.html index.htm index.nginx-debian.html;
+
+    server_name _;
+
+    location / {
+    	try_files $uri $uri/ =404;
+    }
+}
