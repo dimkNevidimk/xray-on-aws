@@ -2,10 +2,16 @@
 
 set -eu -o pipefail
 
-pushd terraform/ &> /dev/null
-xray_server_user="${XRAY_SERVER_USER:-$(terraform output -raw xray_server_user)}"
-xray_server_host="${XRAY_SERVER_HOST:-$(terraform output -raw xray_server_ipv6)}"
-popd &> /dev/null
+if [ -n "${XRAY_SERVER_ON_AWS:-}" ]; then
+    pushd terraform/ &> /dev/null
+    xray_server_user="$(terraform output -raw xray_server_user)"
+    xray_server_host="$(terraform output -raw xray_server_ipv6)"
+    popd &> /dev/null
+else
+    xray_server_user="${XRAY_SERVER_USER}"
+    xray_server_host="${XRAY_SERVER_HOST}"
+fi
+
 ssh "$xray_server_user"@"$xray_server_host" bash -s << 'EOF'
     set -eu -o pipefail
 

@@ -29,8 +29,9 @@ ssh-keygen -t ed25519 -C "your@email.smth"
 ```
 5. Create yourself a domain name, which would be needed for TLS, e.g. you can use https://freemyip.com
 
-# Usage
-## Prepare the server
+# Install Xray server
+## Create a VM on AWS
+*Skip this step if you use a custom host*
 First start a private server instance in a region you setup in `~/.aws/config`.
 ```bash
 ( cd terraform/ ; terraform apply )
@@ -39,27 +40,47 @@ or if you use different ssh-key than `~/.ssh/id_ed25519`
 ```bash
 ( cd terraform/ ; terraform apply -var private_key_file="path-to-your-private-key" )
 ```
-## Provision the server
-Assign created domain name to this instance. If you were using `https://freemyip.com`, you can use the following playbook:
+
+## Important note
+If you don't need a server anymore, don't forget to terminate it in order to avoid the unnecessary costs.
+```bash
+( cd terraform/ ; terraform destroy )
+```
+
+## Setup environment
+### If using AWS
 ```bash
 export XRAY_SERVER_HOST="$(cd terraform/ ; terraform output -raw xray_server_ipv6)" # or change to your server name
 export XRAY_SERVER_USER="$(cd terraform/ ; terraform output -raw xray_server_user)" # or change to the user on your server
+```
+### If using a custom host
+```bash
+export XRAY_SERVER_HOST="HOST_IP_ADDRESS"
+export XRAY_SERVER_USER="HOST_USER"
+```
+
+## Install the required software
+This will install all the necessary software on the server
+### Setup freemyip domain name (optional)
+If you do not have a DNS name for your server, you can create one for free like this:
+```bash
 ansible-playbook -i "$XRAY_SERVER_HOST", -u "$XRAY_SERVER_USER" ansible/setup_freemyip_domain_name.yml
 ```
-Then provision this instance with Xray server.
+### Install Xray server
+To install Xray server run the following:
 ```bash
 ansible-playbook -i "$XRAY_SERVER_HOST", -u "$XRAY_SERVER_USER" ansible/setup_xray_server.yml
 ```
-Finally you can generate a QR-code and a connection string to connect to this server from your device
+
+## Add new Xray client
+Now you are ready to add new clients for your server.
+### Create new client
+**First make sure that the steps in [environment setup](#setup-environment) are completed**</br>
+Now you can generate a QR-code and a connection string to connect to Xray from your device
 ```bash
+export 
 ./add_vless_client.sh
 ```
 scan resulting QR-code from the app which supports VLESS on your device and connect to your own VPN server.
 
 For example as a client application on IOS you can try [FoXray](https://apps.apple.com/us/app/foxray/id6448898396)
-
-# Important note
-If you don't need a server anymore, don't forget to terminate it in order to avoid unnecessary costs.
-```bash
-( cd terraform/ ; terraform destroy ) 
-```

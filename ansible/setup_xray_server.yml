@@ -52,7 +52,7 @@
 
     - name: Download Xray installer
       get_url:
-        url: https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh
+        url: https://raw.githubusercontent.com/XTLS/Xray-install/34df513a033afa2c64e4fa2353185c56e84a1ae9/install-release.sh
         dest: /tmp/install-xray-server.sh
         checksum: sha256:6f2965646eeb5010e9518a0541958360930ab855849db875f907231ffa37d77b
         mode: "700"
