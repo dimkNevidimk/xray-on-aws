@@ -7,7 +7,7 @@ Unix tools to setup a `t3.nano` (you can change that) instance of [Xray](https:/
 **Important note for non-AWS users**
 
 *Even though this repo is designed to be used with AWS, you can still use `ansible-playbooks` to deploy Xray-VLESS on <b>any server</b>.*<br/>
-*Navigate directly to [Provision the server](https://github.com/dimkNevidimk/xray-on-aws#provision-the-server) section if this is the case.*
+*Navigate directly to [Provision the server](https://github.com/dimkNevidimk/xray-on-aws#setup-environment) section if this is the case.*
 
 # Prerequisites
 1. Create an account in AWS
