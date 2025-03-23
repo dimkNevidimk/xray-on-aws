@@ -1,4 +1,4 @@
-- name: Assign domain name generated on freemyip.com to the AWS instance
+- name: Assign domain name generated on freemyip.com to the server instance
   hosts: all
 
   vars_prompt:
@@ -6,8 +6,13 @@
       prompt: https://freemyip.com secret URL
       private: true
 
+    - name: auto_re_register_domain
+      prompt: "Periodically re-register the domain name for this instance (see https://freemyip.com/help)?"
+      default: "yes"
+      private: false
+
   tasks:
-    - name: Bind domain name with IPs of current AWS instance
+    - name: Bind domain name with IPs of current server instance
       uri:
         url: "{{ freemyip_secret_url }}{{ item }}"
         return_content: true
@@ -16,3 +21,57 @@
       with_items:
         - "" # for IPv4
         - "&myip={{ ansible_facts.default_ipv6.get('address', ansible_facts.default_ipv4.address) }}" # for IPv6 if applicable
+
+    - name: Periodically re-register domain name for this server
+      when: auto_re_register_domain | bool
+      block:
+        - name: Create updater script
+          copy:
+            dest: /usr/local/bin/re_register_domain.sh
+            mode: "0700"
+            content: |
+              #!/usr/bin/env bash
+
+              curl --retry 10 --retry-delay 10 --retry-connrefused "{{ freemyip_secret_url }}"
+
+        - name: Create systemd service file
+          copy:
+            dest: /etc/systemd/system/re_register_domain.service
+            content: |
+              [Unit]
+              Description=Re-register domain every 6 months
+              Wants=re_register_domain.timer
+
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/local/bin/re_register_domain.sh
+              User=root
+
+        - name: Create systemd timer file
+          copy:
+            dest: /etc/systemd/system/re_register_domain.timer
+            content: |
+              [Unit]
+              Description=Timer to run re_register_domain every 6 months
+
+              [Timer]
+              OnCalendar=semiannually
+              Persistent=true
+
+              [Install]
+              WantedBy=timers.target
+
+        - name: Reload systemd to recognize new files
+          systemd:
+            daemon_reload: yes
+
+        - name: Enable systemd service
+          systemd:
+            name: re_register_domain.service
+            enabled: yes
+
+        - name: Enable and start systemd timer
+          systemd:
+            name: re_register_domain.timer
+            enabled: yes
+            state: started

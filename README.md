@@ -66,6 +66,9 @@ If you do not have a DNS name for your server, you can create one for free like 
 ```bash
 ansible-playbook -i "$XRAY_SERVER_HOST", -u "$XRAY_SERVER_USER" ansible/setup_freemyip_domain_name.yml
 ```
+
+Make sure to re-claim your IP-address yearly (ansible will ask for that), otherwise it will be lost, see https://freemyip.com/help for more information.
+If you want to do it manually answer 'no' to the prompt.
 ### Install Xray server
 To install Xray server run the following:
 ```bash
@@ -78,7 +81,7 @@ Now you are ready to add new clients for your server.
 **First make sure that the steps in [environment setup](#setup-environment) are completed**</br>
 Now you can generate a QR-code and a connection string to connect to Xray from your device
 ```bash
-export 
+export
 ./add_vless_client.sh
 ```
 scan resulting QR-code from the app which supports VLESS on your device and connect to your own VPN server.

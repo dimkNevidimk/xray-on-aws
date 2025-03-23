@@ -29,7 +29,7 @@
 
     - name: Copy nginx config
       template:
-        src: templates/nginx.conf.j2 
+        src: templates/nginx.conf.j2
         dest: /etc/nginx/sites-enabled/default
       register: xray_server_nginx_conf
       become: true
