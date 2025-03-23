@@ -16,6 +16,7 @@ ssh "$xray_server_user"@"$xray_server_host" bash -s << 'EOF'
     set -eu -o pipefail
 
     xray_server_cname="$(cat ~/xray_server_cname)"
+    xray_server_ip="$(hostname -I | sed 's/[[:space:]]*$//')"
     xray_client_uuid="$(xray uuid)"
     sudo python3 <<END
 import json
@@ -33,8 +34,8 @@ END
     sudo systemctl restart xray
 
     echo "Added new client: $xray_client_uuid"
-    
-    vless_conn_string="vless://${xray_client_uuid}@${xray_server_cname}:443?security=tls&sni=${xray_server_cname}&alpn=http/1.1,h2&fp=edge&type=tcp&flow=xtls-rprx-vision&encryption=none#${xray_server_cname}"
+
+    vless_conn_string="vless://${xray_client_uuid}@${xray_server_ip}:443?security=tls&sni=${xray_server_cname}&alpn=http/1.1,h2&fp=edge&type=tcp&flow=xtls-rprx-vision&encryption=none#${xray_server_cname}"
     echo "VLESS connection string: $vless_conn_string"
     echo -n "$vless_conn_string" | qrencode -t ansiutf8
 EOF
